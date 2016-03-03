@@ -289,6 +289,7 @@ public class SignalClusterView
             return;
         }
         state.mMobileVisible = statusIcon.visible && !mBlockMobile;
+        state.mMobileVolteVisible = statusIcon.volteAvailable;
         state.mMobileStrengthId = statusIcon.icon;
         state.mMobileTypeId = statusType;
         state.mMobileDescription = statusIcon.contentDescription;
@@ -653,6 +654,7 @@ public class SignalClusterView
     private class PhoneState {
         private final int mSubId;
         private boolean mMobileVisible = false;
+        private boolean mMobileVolteVisible = false;
         private int mMobileStrengthId = 0, mMobileTypeId = 0;
         private int mLastMobileStrengthId = -1;
         private int mLastMobileTypeId = -1;
@@ -660,7 +662,7 @@ public class SignalClusterView
         private String mMobileDescription, mMobileTypeDescription;
 
         private ViewGroup mMobileGroup;
-        private ImageView mMobile, mMobileDark, mMobileType;
+        private ImageView mMobileVolte, mMobile, mMobileDark, mMobileType;
 
         private int mDataActivityId = 0, mMobileActivityId = 0;
         private int mStackedDataId = 0, mStackedVoiceId = 0;
@@ -676,6 +678,7 @@ public class SignalClusterView
 
         public void setViews(ViewGroup root) {
             mMobileGroup    = root;
+            mMobileVolte    = (ImageView) root.findViewById(R.id.volte);
             mMobile         = (ImageView) root.findViewById(R.id.mobile_signal);
             mMobileDark     = (ImageView) root.findViewById(R.id.mobile_signal_dark);
             mMobileType     = (ImageView) root.findViewById(R.id.mobile_type);
@@ -690,6 +693,8 @@ public class SignalClusterView
         }
 
         public boolean apply(boolean isSecondaryIcon) {
+            mMobileVolte.setVisibility(mMobileVolteVisible ? View.VISIBLE : View.GONE);
+
             if (mMobileVisible && !mIsAirplaneMode) {
                 if (mLastMobileStrengthId != mMobileStrengthId) {
                     updateAnimatableIcon(mMobile, mMobileStrengthId);
@@ -814,6 +819,7 @@ public class SignalClusterView
                     StatusBarIconController.getDarkIntensity(tintArea, mMobile, darkIntensity),
                     mMobile, mMobileDark);
             setTint(mMobileType, StatusBarIconController.getTint(tintArea, mMobileType, tint));
+            setTint(mMobileVolte, StatusBarIconController.getTint(tintArea, mMobileVolte, tint));
         }
     }
 }

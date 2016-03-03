@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.NetworkCapabilities;
 import android.os.Looper;
+import android.telephony.ImsFeatureCapability;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SignalStrength;
@@ -73,6 +74,8 @@ public class MobileSignalController extends SignalController<
     private SignalStrength mSignalStrength;
     private MobileIconGroup mDefaultIcons;
     private Config mConfig;
+    private boolean mImsRegistered = false;
+    private boolean mVolteEnabled = false;
 
     private final int STATUS_BAR_STYLE_ANDROID_DEFAULT = 0;
     private final int STATUS_BAR_STYLE_CDMA_1X_COMBINED = 1;
@@ -165,7 +168,11 @@ public class MobileSignalController extends SignalController<
                         | PhoneStateListener.LISTEN_CALL_STATE
                         | PhoneStateListener.LISTEN_DATA_CONNECTION_STATE
                         | PhoneStateListener.LISTEN_DATA_ACTIVITY
-                        | PhoneStateListener.LISTEN_CARRIER_NETWORK_CHANGE);
+                        | PhoneStateListener.LISTEN_CARRIER_NETWORK_CHANGE
+                        | (mConfig.showVolteIcon
+                                ? PhoneStateListener.LISTEN_IMS_REGISTERED_STATE_CHANGE
+                                        | PhoneStateListener.LISTEN_IMS_FEATURE_CAPABILITY_CHANGE
+                                : PhoneStateListener.LISTEN_NONE));
     }
 
     /**
@@ -260,6 +267,7 @@ public class MobileSignalController extends SignalController<
                 || mCurrentState.iconGroup == TelephonyIcons.ROAMING
                 || dataDisabled;
         IconState statusIcon = new IconState(mCurrentState.enabled && !mCurrentState.airplaneMode,
+                mCurrentState.volteAvailable,
                 getCurrentIconId(), contentDescription);
 
         int qsTypeIcon = 0;
@@ -542,6 +550,9 @@ public class MobileSignalController extends SignalController<
                 && !TextUtils.isEmpty(mServiceState.getOperatorAlphaShort())) {
             mCurrentState.networkName = mServiceState.getOperatorAlphaShort();
         }
+        if (mConfig.showVolteIcon) {
+            mCurrentState.volteAvailable = mImsRegistered && mVolteEnabled;
+        }
 
         if (mConfig.readIconsFromXml) {
             mCurrentState.voiceLevel = getVoiceSignalLevel();
@@ -778,6 +789,8 @@ public class MobileSignalController extends SignalController<
         pw.println("  mSignalStrength=" + mSignalStrength + ",");
         pw.println("  mDataState=" + mDataState + ",");
         pw.println("  mDataNetType=" + mDataNetType + ",");
+        pw.println("  mImsRegistered=" + mImsRegistered + ",");
+        pw.println("  mVolteEnabled=" + mVolteEnabled + ",");
     }
 
     class MobilePhoneStateListener extends PhoneStateListener {
@@ -843,6 +856,25 @@ public class MobileSignalController extends SignalController<
 
             updateTelephony();
         }
+
+        @Override
+        public void onImsRegisteredChanged(boolean imsRegistered) {
+            if (DEBUG) {
+                Log.d(mTag, "onImsRegisteredChanged: imsRegistered=" + imsRegistered);
+            }
+            mImsRegistered = imsRegistered;
+            updateTelephony();
+        }
+
+        @Override
+        public void onImsFeatureCapabilityChanged(ImsFeatureCapability imsFeatureCapability) {
+            if (DEBUG) {
+                Log.d(mTag, "onImsFeatureCapabilityChanged: imsFeatureCapability="
+                        + imsFeatureCapability);
+            }
+            mVolteEnabled = imsFeatureCapability.isVolteEnabled();
+            updateTelephony();
+        }
     };
 
     static class MobileIconGroup extends SignalController.IconGroup {
@@ -894,6 +926,7 @@ public class MobileSignalController extends SignalController<
         boolean userSetup;
         int dataActivity;
         int voiceLevel;
+        boolean volteAvailable;
 
         @Override
         public void copyFrom(State s) {
@@ -910,6 +943,7 @@ public class MobileSignalController extends SignalController<
             userSetup = state.userSetup;
             dataActivity = state.dataActivity;
             voiceLevel = state.voiceLevel;
+            volteAvailable = state.volteAvailable;
         }
 
         @Override
@@ -928,6 +962,7 @@ public class MobileSignalController extends SignalController<
             builder.append("userSetup=").append(userSetup);
             builder.append("voiceLevel=").append(voiceLevel).append(',');
             builder.append("carrierNetworkChangeMode=").append(carrierNetworkChangeMode);
+            builder.append("volteAvailable=").append(volteAvailable);
         }
 
         @Override
@@ -943,6 +978,7 @@ public class MobileSignalController extends SignalController<
                     && ((MobileState) o).userSetup == userSetup
                     && ((MobileState) o).voiceLevel == voiceLevel
                     && ((MobileState) o).isDefault == isDefault;
+                    && ((MobileState) o).volteAvailable == volteAvailable;
         }
     }
 }
