@@ -12157,6 +12157,12 @@ public class PackageManagerService extends IPackageManager.Stub {
         if (!DEFAULT_VERIFY_ENABLE) {
             return false;
         }
+
+        // TODO: fix b/25118622; don't bypass verification
+        if (Build.IS_DEBUGGABLE && (installFlags & PackageManager.INSTALL_QUICK) != 0) {
+            return false;
+        }
+
         // Ephemeral apps don't get the full verification treatment
         if ((installFlags & PackageManager.INSTALL_EPHEMERAL) != 0) {
             if (DEBUG_EPHEMERAL) {
@@ -14905,6 +14911,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         final boolean forwardLocked = ((installFlags & PackageManager.INSTALL_FORWARD_LOCK) != 0);
         final boolean onExternal = (((installFlags & PackageManager.INSTALL_EXTERNAL) != 0)
                 || (args.volumeUuid != null));
+        final boolean quickInstall = ((installFlags & PackageManager.INSTALL_QUICK) != 0);
         final boolean ephemeral = ((installFlags & PackageManager.INSTALL_EPHEMERAL) != 0);
         final boolean forceSdk = ((installFlags & PackageManager.INSTALL_FORCE_SDK) != 0);
         boolean replace = false;
@@ -14935,6 +14942,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                 | PackageParser.PARSE_ENFORCE_CODE
                 | (forwardLocked ? PackageParser.PARSE_FORWARD_LOCK : 0)
                 | (onExternal ? PackageParser.PARSE_EXTERNAL_STORAGE : 0)
+                | (quickInstall ? PackageParser.PARSE_SKIP_VERIFICATION : 0)
                 | (ephemeral ? PackageParser.PARSE_IS_EPHEMERAL : 0)
                 | (forceSdk ? PackageParser.PARSE_FORCE_SDK : 0);
         PackageParser pp = new PackageParser();
