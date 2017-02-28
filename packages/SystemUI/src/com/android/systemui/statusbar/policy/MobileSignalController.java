@@ -554,16 +554,6 @@ public class MobileSignalController extends SignalController<
         return !mPhone.getDataEnabled(mSubscriptionInfo.getSubscriptionId());
     }
 
-<<<<<<< HEAD
-    private boolean showLongOperatorName() {
-        if (mContext.getResources().getBoolean(R.bool.config_show_long_operator_name) || (mContext.
-                getResources().getBoolean(R.bool.config_show_long_operator_name_when_roaming) &&
-                isRoaming())) {
-            return true;
-        }
-        return false;
-    }
-
     private void generateIconGroup() {
         final int level = mCurrentState.level;
         final int voiceLevel = mCurrentState.voiceLevel;
@@ -768,8 +758,6 @@ public class MobileSignalController extends SignalController<
         }
     }
 
-=======
->>>>>>> f809f7c... Revert "Support to show long or short name in SystemUI."
     @VisibleForTesting
     void setActivity(int activity) {
         mCurrentState.activityIn = activity == TelephonyManager.DATA_ACTIVITY_INOUT
